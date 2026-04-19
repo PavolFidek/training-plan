@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Tréning">
+<title>Hybridný tréningový plán</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg2: #f5f5f3;
+    --bg3: #efefec;
+    --text: #1a1a18;
+    --text2: #6b6b67;
+    --text3: #9b9b96;
+    --border: rgba(0,0,0,0.1);
+    --border2: rgba(0,0,0,0.18);
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a;
+      --bg2: #252523;
+      --bg3: #2e2e2b;
+      --text: #f0efe8;
+      --text2: #a0a09a;
+      --text3: #6b6b67;
+      --border: rgba(255,255,255,0.1);
+      --border2: rgba(255,255,255,0.18);
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg3); color: var(--text); font-size: 15px; line-height: 1.5; }
+  .header { background: var(--bg); border-bottom: 0.5px solid var(--border); padding: 14px 16px 10px; position: sticky; top: 0; z-index: 100; }
+  .header h1 { font-size: 17px; font-weight: 600; color: var(--text); margin-bottom: 10px; }
+  .week-row { display: flex; align-items: center; gap: 8px; }
+  .week-row label { font-size: 13px; color: var(--text2); }
+  .week-row select { padding: 5px 10px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg2); color: var(--text); font-size: 13px; flex: 1; }
+  .phase-pill { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+  .pp-teal { background: #E1F5EE; color: #0F6E56; }
+  .pp-purple { background: #EEEDFE; color: #3C3489; }
+  .pp-amber { background: #FAEEDA; color: #633806; }
+  .tabs { background: var(--bg); border-bottom: 0.5px solid var(--border); display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab-btn { padding: 11px 16px; border: none; background: transparent; cursor: pointer; font-size: 13px; color: var(--text2); white-space: nowrap; border-bottom: 2px solid transparent; font-weight: 400; }
+  .tab-btn.active { color: var(--text); border-bottom-color: #1a1a18; font-weight: 600; }
+  .content { padding: 12px 12px 40px; max-width: 600px; margin: 0 auto; }
+  .view { display: none; }
+  .view.active { display: block; }
+  .sec-label { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; margin: 16px 0 6px; }
+  .ex-card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 11px 13px; margin-bottom: 7px; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+  .ex-left { flex: 1; min-width: 0; }
+  .ex-name { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 2px; }
+  .ex-note { font-size: 12px; color: var(--text2); line-height: 1.4; }
+  .badge { font-size: 11px; padding: 3px 9px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; font-weight: 500; align-self: flex-start; }
+  .b-teal { background: #E1F5EE; color: #0F6E56; }
+  .b-purple { background: #EEEDFE; color: #3C3489; }
+  .b-amber { background: #FAEEDA; color: #633806; }
+  .b-blue { background: #E6F1FB; color: #185FA5; }
+  .b-green { background: #EAF3DE; color: #3B6D11; }
+  .b-gray { background: #F1EFE8; color: #5F5E5A; }
+  .tip-box { background: var(--bg2); border-radius: var(--radius); padding: 11px 13px; margin-top: 12px; font-size: 13px; color: var(--text2); line-height: 1.6; }
+  .tip-box strong { color: var(--text); font-weight: 600; }
+  .day-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .day-card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 11px 12px; cursor: pointer; transition: border-color .15s; active-opacity: 0.7; }
+  .day-card.active { border: 2px solid #378ADD; }
+  .day-name { font-size: 11px; color: var(--text2); margin-bottom: 3px; }
+  .day-type { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 14px; }
+  .metric { background: var(--bg2); border-radius: var(--radius); padding: 8px 10px; }
+  .metric-label { font-size: 10px; color: var(--text2); margin-bottom: 2px; }
+  .metric-val { font-size: 16px; font-weight: 600; color: var(--text); }
+  @media (prefers-color-scheme: dark) {
+    .b-teal { background: #085041; color: #9FE1CB; }
+    .b-purple { background: #3C3489; color: #CECBF6; }
+    .b-amber { background: #633806; color: #FAC775; }
+    .b-blue { background: #0C447C; color: #B5D4F4; }
+    .b-green { background: #27500A; color: #C0DD97; }
+    .b-gray { background: #444441; color: #D3D1C7; }
+    .pp-teal { background: #085041; color: #9FE1CB; }
+    .pp-purple { background: #3C3489; color: #CECBF6; }
+    .pp-amber { background: #633806; color: #FAC775; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Hybridný tréningový plán</h1>
+  <div class="week-row">
+    <label>Týždeň:</label>
+    <select id="weekSel" onchange="setWeek(this.value)">
+      <option value="1">1–2 · Základ</option>
+      <option value="3">3–4 · Rozvoj</option>
+      <option value="5">5–6 · Intenzita</option>
+    </select>
+    <span id="phase-pill" class="phase-pill pp-teal">Základ</span>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="showView('week')">Týždeň</button>
+  <button class="tab-btn" onclick="showView('posterior')">Posterior</button>
+  <button class="tab-btn" onclick="showView('anterior')">Anterior</button>
+  <button class="tab-btn" onclick="showView('functional')">Funkčný</button>
+  <button class="tab-btn" onclick="showView('run')">Beh</button>
+  <button class="tab-btn" onclick="showView('warmup')">Rozcvička</button>
+</div>
+
+<div class="content">
+
+<!-- WEEK -->
+<div id="view-week" class="view active">
+  <div class="day-grid" id="dayGrid"></div>
+  <div id="dayDetail"></div>
+</div>
+
+<!-- POSTERIOR -->
+<div id="view-posterior" class="view">
+  <div class="phase-pill pp-teal" id="pp-posterior" style="margin-bottom:12px">Týždeň 1–2 · Základ</div>
+  <div class="sec-label">Rozcvička (10 min)</div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Jumping jacks / skipping</div><div class="ex-note">Rozprúdiť krv, nie unaviť sa</div></div><span class="badge b-gray">2 min</span></div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Leg swing dopredu/dozadu + do strany</div><div class="ex-note">10× na nohu každý smer</div></div><span class="badge b-gray">mobilita</span></div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Cat-cow + hip circle</div><div class="ex-note">10 opak. každý</div></div><span class="badge b-gray">mobilita</span></div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Banded clamshell</div><div class="ex-note">Guma nad kolenami, na boku — gluteus medius</div></div><span class="badge b-amber">15× / stranu</span></div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Banded hip thrust (BW)</div><div class="ex-note">Guma nad kolenami, tlač kolená von, výdrž 1 s</div></div><span class="badge b-amber">15 opak.</span></div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Banded monster walk</div><div class="ex-note">Mierny poddrep, kroky do strany</div></div><span class="badge b-amber">2× 10 krokov</span></div>
+  <div class="sec-label">Nabiehajúce série (pred RDL)</div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">40–50 % pracovnej záťaže</div><div class="ex-note">Len pohyb, bez únavy</div></div><span class="badge b-gray">8 opak.</span></div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">60–70 % pracovnej záťaže</div><div class="ex-note">Cítiš záťaž, stále ľahko</div></div><span class="badge b-gray">5 opak.</span></div>
+  <div class="sec-label">Hlavné cviky</div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Rumunský mŕtvy ťah</div><div class="ex-note">Pomalá excentrika 3 s, cítiš ťah hamstringov</div></div><span class="badge b-teal" id="ps1">3×8 · 60–70%</span></div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Hip thrust</div><div class="ex-note">Gluteá na vrchole, výdrž 1 s hore</div></div><span class="badge b-teal" id="ps2">3×12</span></div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Pull-up / lat pulldown</div><div class="ex-note">Plná amplitúda, kontrolovaný spust</div></div><span class="badge b-teal" id="ps3">3×6–8</span></div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Veslovaním (barbell / DB)</div><div class="ex-note">Lakte blízko tela, lopatky k sebe</div></div><span class="badge b-teal" id="ps4">3×10</span></div>
+  <div class="sec-label">Doplnkové cviky</div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Nordic curl / leg curl</div><div class="ex-note">Výbušný hore, pomalý dole — bežecká prevencia</div></div><span class="badge b-teal" id="ps5">3×8</span></div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Face pull / rear delt fly</div><div class="ex-note">Zadné delty — posture bežca</div></div><span class="badge b-teal" id="ps6">3×15</span></div>
+  <div class="tip-box" id="tip-posterior"><strong>Týždeň 1–2:</strong> Zameraj sa na techniku. Záťaž konzervatívna. Odpočinok 90 s medzi sériami.</div>
+</div>
+
+<!-- ANTERIOR -->
+<div id="view-anterior" class="view">
+  <div class="phase-pill pp-purple" id="pp-anterior" style="margin-bottom:12px">Týždeň 1–2 · Základ</div>
+  <div class="sec-label">Rozcvička (10 min)</div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Jumping jacks / skipping</div><div class="ex-note">Rozprúdiť krv</div></div><span class="badge b-gray">2 min</span></div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Ankle circle + dorsiflexia pri stene</div><div class="ex-note">10× na nohu — hlezno pre drep</div></div><span class="badge b-gray">mobilita</span></div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">World's greatest stretch</div><div class="ex-note">Hip flexor + hrudná rotácia + hamstring</div></div><span class="badge b-gray">5× / stranu</span></div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Lateral lunge + BW squat s výdržou</div><div class="ex-note">Lateral: 8× / stranu · Squat: výdrž 3 s dole</div></div><span class="badge b-gray">mobilita</span></div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Banded squat walk</div><div class="ex-note">Guma nad kolenami, mierny poddrep, kroky dopredu/dozadu</div></div><span class="badge b-amber">2× 10 krokov</span></div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Banded pull-apart</div><div class="ex-note">Guma v rukách, rozťahovať do strán — aktivácia zadných delt</div></div><span class="badge b-amber">15 opak.</span></div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Dead bug + step-up (BW)</div><div class="ex-note">Dead bug: 8× / stranu · Step-up: 10× / nohu</div></div><span class="badge b-gray">aktivácia</span></div>
+  <div class="sec-label">Nabiehajúce série (pred drepom)</div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">40–50 % pracovnej záťaže</div><div class="ex-note">Len pohyb, bez únavy</div></div><span class="badge b-gray">8 opak.</span></div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">60–70 % pracovnej záťaže</div><div class="ex-note">Cítiš záťaž, stále ľahko</div></div><span class="badge b-gray">5 opak.</span></div>
+  <div class="sec-label">Hlavné cviky</div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Back squat / goblet drep</div><div class="ex-note">Minimálne do paralelky, kolená sledujú prsty</div></div><span class="badge b-purple" id="as1">4×6 · 65–70%</span></div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Bulharský drep (split squat)</div><div class="ex-note">Predná noha 60–70 cm od lavičky, trup vzpriamený</div></div><span class="badge b-purple" id="as2">3×8 / nohu</span></div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Bench press / dips</div><div class="ex-note">Plná amplitúda, kontrolovaný spust</div></div><span class="badge b-purple" id="as3">3×8–10</span></div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Overhead press</div><div class="ex-note">Stoj, core napnutý, neprehýbaj chrbát</div></div><span class="badge b-purple" id="as4">3×10</span></div>
+  <div class="sec-label">Core</div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Ab wheel rollout</div><div class="ex-note">Z kolien, chrbát rovný, nevypadni do bedier</div></div><span class="badge b-purple" id="as5">3×8</span></div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Pallof press</div><div class="ex-note">Rotačná stabilita — kľúč pre beh aj Hyrox</div></div><span class="badge b-purple" id="as6">3×12 / stranu</span></div>
+  <div class="tip-box" id="tip-anterior"><strong>Týždeň 1–2:</strong> Banded pull-apart pred OHP znižuje riziko impingementu. Dead bug aktivuje core pred drepom.</div>
+</div>
+
+<!-- FUNCTIONAL -->
+<div id="view-functional" class="view">
+  <div class="phase-pill pp-amber" id="pp-functional" style="margin-bottom:12px">Týždeň 1–2 · Základ</div>
+  <div class="sec-label">Rozcvičenie — pohybové vzorce (10 min)</div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">World's greatest stretch</div><div class="ex-note">Hip flexor + rotácia + hamstring</div></div><span class="badge b-gray">5× / stranu</span></div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Bear crawl</div><div class="ex-note">Kolená 2 cm nad zemou, rytmické striedanie</div></div><span class="badge b-gray">3× 10 m</span></div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Hip 90/90 rotácia</div><div class="ex-note">Uvoľnenie bedrového kĺbu pred výbušnosťou</div></div><span class="badge b-gray">10× / stranu</span></div>
+  <div class="sec-label">Blok A — výbušnosť</div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Box jump / broad jump</div><div class="ex-note">Mäkké pristátie, odraz z chodidla — kvalita nie rýchlosť</div></div><span class="badge b-amber" id="fs1">3×5</span></div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Kettlebell swing</div><div class="ex-note">Hip hinge nie drep — gluteá strieľajú hore</div></div><span class="badge b-amber" id="fs2">3×12</span></div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Medicine ball slam</div><div class="ex-note">Celé telo, výbušný pohyb, výdrž hore pred slamom</div></div><span class="badge b-amber" id="fs3">3×10</span></div>
+  <div class="sec-label">Blok B — Hyrox simulácia</div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">400 m beh → 15 wall balls</div><div class="ex-note">Plynulý prechod bez pauzy — tréning pre "beh unavený"</div></div><span class="badge b-amber" id="fs4">2 rundy</span></div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Farmer's carry → burpee broad jump</div><div class="ex-note">30 m carry ťažký ale kontrolovateľný, bez hrbenia</div></div><span class="badge b-amber" id="fs5">2× 30 m + 8 burpees</span></div>
+  <div class="sec-label">Záver — stabilita</div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Dead bug</div><div class="ex-note">Kríž v chrbte na podložke počas celého cviku</div></div><span class="badge b-gray">3×10 / stranu</span></div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Copenhagen plank</div><div class="ex-note">Addukčné svaly — bežecká stabilita kolena</div></div><span class="badge b-gray">3×20 s / stranu</span></div>
+  <div class="tip-box" id="tip-functional"><strong>Týždeň 1–2:</strong> Spoznaj pohyby. Blok B nerob na čas. Dôležité je naučiť sa fungovať unavený.</div>
+</div>
+
+<!-- RUN -->
+<div id="view-run" class="view">
+  <div class="sec-label">Utorok — ľahký výbeh</div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Rozcvičenie</div><div class="ex-note">5 min chôdza alebo veľmi pomalý klus</div></div><span class="badge b-blue">5 min</span></div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Ľahký výbeh</div><div class="ex-note">Konverzačné tempo — vieš rozprávať celé vety. Zóna 2.</div></div><span class="badge b-blue" id="run1">5–7 km</span></div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Dobehnutie + strečing</div><div class="ex-note">Pomalý klus 3 min, potom statický strečing lýtok a hamstringov</div></div><span class="badge b-blue">5 min</span></div>
+  <div class="sec-label">Štvrtok — intervalový tréning</div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Rozcvičenie</div><div class="ex-note">1–2 km pomalý klus</div></div><span class="badge b-blue">10 min</span></div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Intervalové úseky</div><div class="ex-note">80–85 % max. tempa · medzi úsekmi 90 s chôdza alebo klus</div></div><span class="badge b-blue" id="run2">4–6 × 400–800 m</span></div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Dobehnutie + strečing</div><div class="ex-note">1 km pomalý klus, strečing</div></div><span class="badge b-blue">10 min</span></div>
+  <div class="tip-box"><strong>Progresia behu:</strong> Týždeň 1–2: 4× 400 m · Týždeň 3–4: 5× 600 m · Týždeň 5–6: 6× 800 m. Ľahký výbeh predlžuj o 0.5–1 km každé 2 týždne.</div>
+</div>
+
+<!-- WARMUP -->
+<div id="view-warmup" class="view">
+  <div class="metrics">
+    <div class="metric"><div class="metric-label">Krvný obeh</div><div class="metric-val">2 min</div></div>
+    <div class="metric"><div class="metric-label">Mobilita</div><div class="metric-val">4 min</div></div>
+    <div class="metric"><div class="metric-label">Aktivácia</div><div class="metric-val">4 min</div></div>
+    <div class="metric"><div class="metric-label">Celkovo</div><div class="metric-val">10 min</div></div>
+  </div>
+  <div class="sec-label">Posterior deň — špecifické cviky</div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Leg swing (dopredu/dozadu + do strany)</div><div class="ex-note">10× na nohu každý smer</div></div><span class="badge b-teal">mobilita</span></div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Cat-cow + hip circle</div><div class="ex-note">10 opak. každý</div></div><span class="badge b-teal">mobilita</span></div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Banded clamshell</div><div class="ex-note">Guma nad kolenami — gluteus medius</div></div><span class="badge b-amber">15× / stranu</span></div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Banded hip thrust (BW) + monster walk</div><div class="ex-note">Hip thrust: 15 opak. · Monster walk: 2× 10 krokov</div></div><span class="badge b-amber">aktivácia</span></div>
+  <div class="sec-label">Anterior deň — špecifické cviky</div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Ankle circle + dorsiflexia pri stene</div><div class="ex-note">10× na nohu — hlezno pre drep</div></div><span class="badge b-purple">mobilita</span></div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">World's greatest stretch + lateral lunge</div><div class="ex-note">5× / stranu + 8× / stranu</div></div><span class="badge b-purple">mobilita</span></div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Banded squat walk + pull-apart</div><div class="ex-note">Squat walk: 2× 10 krokov · Pull-apart: 15 opak.</div></div><span class="badge b-amber">aktivácia</span></div>
+  <div class="ex-card"><div class="ex-left"><div class="ex-name">Dead bug + step-up (BW)</div><div class="ex-note">Dead bug: 8× / stranu · Step-up: 10× / nohu</div></div><span class="badge b-purple">aktivácia</span></div>
+  <div class="tip-box"><strong>Čo vynechať pred silovým tréningom:</strong> Statický strečing dlhší ako 30 s · Ťažké kardio · Foam rolling dlhšie ako 60 s / sval.</div>
+</div>
+
+</div>
+
+<script>
+const weekData = {
+  1: {
+    label:'Základ', phase:'pp-teal',
+    ps:['3×8 · 60–70%','3×12','3×6–8','3×10','3×8','3×15'],
+    ptip:'<strong>Týždeň 1–2:</strong> Zameraj sa na techniku. Záťaž konzervatívna. Odpočinok 90 s.',
+    ppill:'Týždeň 1–2 · Základ',
+    as:['4×6 · 65–70%','3×8 / nohu','3×8–10','3×10','3×8','3×12 / stranu'],
+    atip:'<strong>Týždeň 1–2:</strong> Banded pull-apart pred OHP znižuje riziko impingementu. Dead bug aktivuje core pred drepom.',
+    apill:'Týždeň 1–2 · Základ',
+    fs:['3×5','3×12','3×10','2 rundy','2× 30 m + 8 burpees'],
+    ftip:'<strong>Týždeň 1–2:</strong> Spoznaj pohyby. Blok B nerob na čas.',
+    fpill:'Týždeň 1–2 · Základ',
+    run1:'5–7 km', run2:'4× 400 m'
+  },
+  3: {
+    label:'Rozvoj', phase:'pp-purple',
+    ps:['4×8 · 70–75%','4×12','3×8','4×10','3×10','3×15'],
+    ptip:'<strong>Týždeň 3–4:</strong> +1 séria na hlavné cviky. Pridaj 2.5–5 kg. Odpočinok skráť na 75 s.',
+    ppill:'Týždeň 3–4 · Rozvoj',
+    as:['4×8 · 70–75%','3×10 / nohu','4×8–10','3×12','3×10','3×15 / stranu'],
+    atip:'<strong>Týždeň 3–4:</strong> Drep +5 kg. Bulharský drep pridaj záťaž do rúk. Core +1 séria.',
+    apill:'Týždeň 3–4 · Rozvoj',
+    fs:['4×5','4×15','3×12','3 rundy','3× 30 m + 10 burpees'],
+    ftip:'<strong>Týždeň 3–4:</strong> Blok B: 3 rundy. Farmer\'s carry +5 kg. Skráť pauzu medzi blokmi.',
+    fpill:'Týždeň 3–4 · Rozvoj',
+    run1:'6–8 km', run2:'5× 600 m'
+  },
+  5: {
+    label:'Intenzita', phase:'pp-amber',
+    ps:['4×6 · 80–85%','4×10 · max záťaž','4×8','4×10','3×10','3×15'],
+    ptip:'<strong>Týždeň 5–6:</strong> Ťažký RDL — menej opakovaní, viac váhy. Odpočinok 2 min pri ťažkých cvikoch.',
+    ppill:'Týždeň 5–6 · Intenzita',
+    as:['5×5 · 80–85%','4×8 / nohu','4×8–10','4×10','3×12','3×15 / stranu'],
+    atip:'<strong>Týždeň 5–6:</strong> 5×5 na drep — klasický silový protokol. Toto je najsilnejší týždeň.',
+    apill:'Týždeň 5–6 · Intenzita',
+    fs:['4×5 · max výška','4×15','4×12','4 rundy','4× 30 m + 12 burpees'],
+    ftip:'<strong>Týždeň 5–6:</strong> 4 rundy Blok B = malý Hyrox simulátor. Skús všetky bez pauzy. Meria si čas.',
+    fpill:'Týždeň 5–6 · Intenzita',
+    run1:'7–9 km', run2:'6× 800 m'
+  }
+};
+
+const days = [
+  {name:'Pondelok', type:'Posterior', tag:'Silový', cls:'b-teal', view:'posterior'},
+  {name:'Utorok',   type:'Ľahký výbeh', tag:'Beh', cls:'b-blue', view:'run'},
+  {name:'Streda',   type:'Anterior', tag:'Silový', cls:'b-purple', view:'anterior'},
+  {name:'Štvrtok',  type:'Intervalový beh', tag:'Beh', cls:'b-blue', view:'run'},
+  {name:'Piatok',   type:'Funkčný full body', tag:'Funkčný', cls:'b-amber', view:'functional'},
+  {name:'Víkend',   type:'Odpočinok / Roháče', tag:'Regenerácia', cls:'b-green', view:null}
+];
+
+let currentWeek = 1;
+let activeDay = 0;
+
+function buildDayGrid() {
+  const grid = document.getElementById('dayGrid');
+  grid.innerHTML = '';
+  days.forEach((d, i) => {
+    const card = document.createElement('div');
+    card.className = 'day-card' + (i === activeDay ? ' active' : '');
+    card.innerHTML = `<div class="day-name">${d.name}</div><div class="day-type">${d.type}</div><span class="badge ${d.cls}">${d.tag}</span>`;
+    card.onclick = () => {
+      activeDay = i;
+      buildDayGrid();
+      if (d.view) showView(d.view);
+      else {
+        document.getElementById('dayDetail').innerHTML = '<div class="tip-box"><strong>Víkend:</strong> Aktívny odpočinok — turistika v Roháčoch, ľahká prechádzka, strečing. Telo rastie počas odpočinku, nie počas tréningu.</div>';
+      }
+    };
+    grid.appendChild(card);
+  });
+}
+
+function setWeek(v) {
+  currentWeek = parseInt(v);
+  const w = weekData[currentWeek];
+  const pill = document.getElementById('phase-pill');
+  pill.className = 'phase-pill ' + w.phase;
+  pill.textContent = w.label;
+  w.ps.forEach((s,i) => { const el = document.getElementById('ps'+(i+1)); if(el) el.textContent = s; });
+  w.as.forEach((s,i) => { const el = document.getElementById('as'+(i+1)); if(el) el.textContent = s; });
+  w.fs.forEach((s,i) => { const el = document.getElementById('fs'+(i+1)); if(el) el.textContent = s; });
+  document.getElementById('tip-posterior').innerHTML = w.ptip;
+  document.getElementById('tip-anterior').innerHTML = w.atip;
+  document.getElementById('tip-functional').innerHTML = w.ftip;
+  document.getElementById('pp-posterior').textContent = w.ppill;
+  document.getElementById('pp-anterior').textContent = w.apill;
+  document.getElementById('pp-functional').textContent = w.fpill;
+  document.getElementById('run1').textContent = w.run1;
+  document.getElementById('run2').textContent = w.run2;
+}
+
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach((b,i) => {
+    b.classList.toggle('active', ['week','posterior','anterior','functional','run','warmup'][i] === name);
+  });
+  document.getElementById('view-' + name).classList.add('active');
+  window.scrollTo(0, 0);
+  if (name === 'week') buildDayGrid();
+}
+
+buildDayGrid();
+</script>
+</body>
+</html>
