@@ -1,9 +1,11 @@
+const CACHE_NAME = 'app-cache-v1';
+
 self.addEventListener('install', (e) => {
   e.waitUntil(
-    caches.open('app-cache').then((cache) => {
+    caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll([
-        '/',
-        '/index.html'
+        './',
+        './index.html'
       ]);
     })
   );
